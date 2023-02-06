@@ -1,4 +1,4 @@
-package cn.llf.ipfilter.annotation;
+package com.llf.ipfilter.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

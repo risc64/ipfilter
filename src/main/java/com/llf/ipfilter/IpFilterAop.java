@@ -1,16 +1,20 @@
-package cn.llf.ipfilter;
+package com.llf.ipfilter;
 
-import cn.llf.ipfilter.config.IpFilterProperties;
+import com.llf.ipfilter.config.IpFilterProperties;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  *
@@ -27,7 +31,7 @@ public class IpFilterAop {
     @Resource
     private IpFilterProperties ipFilterProperties;
 
-    @Pointcut("@annotation(cn.llf.ipfilter.annotation.IpFilter)")
+    @Pointcut("@annotation(com.llf.ipfilter.annotation.IpFilter)")
     public void ipFilterAopPoint() {
 
     }
@@ -37,18 +41,20 @@ public class IpFilterAop {
         System.out.println("out ipfiltet");
         logger.info("IP验证");
         if (!isBlank(ipFilterProperties.getIps())) {
-            if (!isBlank(ipFilterProperties.getFilterType())) {
+            if (isBlank(ipFilterProperties.getFilterType())) {
                 // 默认 黑名单模式
                 ipFilterProperties.setFilterType("BlackList");
             }
 
 
-            //HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
-            //        .getRequest();
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+                    .getRequest();
+            HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+                    .getResponse();
 
-            if ("request" !=null) {
+            if (request !=null) {
                 //HttpServletResponse response = attributes.getResponse();
-                String ip = "";
+                String ip = request.getRemoteAddr();
                 if (!isBlank(ip)) {
                     String[] ipArray = ipFilterProperties.getIps().split(",");
                     if (ipArray != null && ipArray.length > 0) {
@@ -61,7 +67,7 @@ public class IpFilterAop {
                                         // 匹配到
                                         if ("BlackList".equals(ipFilterProperties.getFilterType())) {
                                             // 黑名单，匹配到，拦截
-                                            return returnObject(ipFilterProperties.getFilterType());
+                                            return returnObject(ipFilterProperties.getFilterType(), response);
                                         } else {
                                             // 白名单，匹配到，放行
                                             return joinPoint.proceed();
@@ -73,7 +79,7 @@ public class IpFilterAop {
                                             return joinPoint.proceed();
                                         } else {
                                             // 白名单，未匹配，放行
-                                            return returnObject(ipFilterProperties.getFilterType());
+                                            return returnObject(ipFilterProperties.getFilterType(), response);
                                         }
                                     }
                                 }
@@ -82,7 +88,7 @@ public class IpFilterAop {
                                     // 匹配到
                                     if ("BlackList".equals(ipFilterProperties.getFilterType())) {
                                         // 黑名单，匹配到，拦截
-                                        return returnObject(ipFilterProperties.getFilterType());
+                                        return returnObject(ipFilterProperties.getFilterType(), response);
                                     } else {
                                         // 白名单，匹配到，放行
                                         return joinPoint.proceed();
@@ -94,7 +100,7 @@ public class IpFilterAop {
                                         return joinPoint.proceed();
                                     } else {
                                         // 白名单，未匹配，放行
-                                        return returnObject(ipFilterProperties.getFilterType());
+                                        return returnObject(ipFilterProperties.getFilterType(), response);
                                     }
                                 }
                             }
@@ -119,15 +125,23 @@ public class IpFilterAop {
 
     }
 
-    private Object returnObject(String filterType) {
+    private Object returnObject(String filterType, HttpServletResponse response) throws IOException {
+        
         String msg = "ip已拦截";
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE");
+        response.setHeader("Access-Control-Max-Age", "3600");
+        response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         if ("BlackList".equals(filterType)) {
             msg = "ip为黑名单";
         } else {
             msg = "ip为不在白名单中";
         }
-        String result = "{\"status\": 1, \"msg\": " + msg + ", \"data\": \"GateWay\"}";
-        return JSONObject.stringToValue(result);
+        String result = "{\"status\": 1, \"msg\": " + msg + ", \"data\": \"IpFilter\"}";
+        response.setContentType("text/html;charset=utf-8");
+        response.getWriter().write(result);
+        response.flushBuffer();
+        return  null;
     }
 
     private boolean isBlank(CharSequence cs) {

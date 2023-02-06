@@ -1,4 +1,4 @@
-package cn.llf.ipfilter.config;
+package com.llf.ipfilter.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

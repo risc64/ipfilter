@@ -1,0 +1,22 @@
+{
+  "groups": [
+    {
+      "name": "llf.ipfilter",
+      "type": "com.llf.ipfilter.config.IpFilterProperties",
+      "sourceType": "com.llf.ipfilter.config.IpFilterProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "llf.ipfilter.filter-type",
+      "type": "java.lang.String",
+      "sourceType": "com.llf.ipfilter.config.IpFilterProperties"
+    },
+    {
+      "name": "llf.ipfilter.ips",
+      "type": "java.lang.String",
+      "sourceType": "com.llf.ipfilter.config.IpFilterProperties"
+    }
+  ],
+  "hints": []
+}
